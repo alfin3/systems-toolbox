@@ -37,17 +37,17 @@ typedef struct{
   int start;
   int count;
   double *data; /* pointer to parent data */
-} thread_arg_t;
+} sum_arg_t;
 
 typedef struct{
   double sum;
-} thread_res_t;
+} sum_res_t;
 
 void *sum_thread(void *arg){
   int i;
-  thread_arg_t *a = arg;
-  thread_res_t *r = NULL;
-  r = malloc_perror(1, sizeof(thread_res_t));
+  sum_arg_t *a = arg;
+  sum_res_t *r = NULL;
+  r = malloc_perror(1, sizeof(sum_res_t));
   r->sum = 0.0;
   printf("sum thread %d running, starting at %d for %d\n",
 	 a->id,
@@ -70,8 +70,8 @@ int main(int argc, char **argv){
   double sum = 0.0;
   double *data = NULL; /* parent data block */
   pthread_t *sids = NULL;
-  thread_arg_t *sa = NULL;
-  thread_res_t *sr = NULL;
+  sum_arg_t *sas = NULL;
+  sum_res_t *sr = NULL;
 
   /* input checking and initialization */
   DRAND_SEED();
@@ -87,7 +87,7 @@ int main(int argc, char **argv){
     exit(EXIT_FAILURE);
   }
   sids = malloc_perror(num_thds, sizeof(pthread_t));
-  sa = malloc_perror(num_thds, sizeof(thread_arg_t));
+  sas = malloc_perror(num_thds, sizeof(sum_arg_t));
   data = malloc_perror(count, sizeof(double));
   for (i = 0; i < count; i++){
     data[i] = DRAND();
@@ -99,20 +99,20 @@ int main(int argc, char **argv){
   printf("main thread about to create %d sum threads\n", num_thds);
   fflush(stdout);
   for (i = 0; i < num_thds; i++){
-    sa[i].id = i;
-    sa[i].count = seg_count;
+    sas[i].id = i;
+    sas[i].count = seg_count;
     if (rem_count > 0){
-      sa[i].count++;
+      sas[i].count++;
       rem_count--;
     }
-    sa[i].start = start;
-    sa[i].data = data;
+    sas[i].start = start;
+    sas[i].data = data;
     printf("main thread creating sum thread %d\n", i);
     fflush(stdout);
-    thread_create_perror(&sids[i], sum_thread, &sa[i]);
+    thread_create_perror(&sids[i], sum_thread, &sas[i]);
     printf("main thread has created sum thread %d\n", i);
     fflush(stdout);
-    start += sa[i].count;
+    start += sas[i].count;
   }
 
   /* join with main */
@@ -129,10 +129,10 @@ int main(int argc, char **argv){
   printf("the average over %d random numbers on [0.0 ,1.0) is %f\n",
 	 count, (double)sum / count);
   free(sids);
-  free(sa);
+  free(sas);
   free(data);
   sids = NULL;
-  sa = NULL;
+  sas = NULL;
   data = NULL;
   return 0;
 }
