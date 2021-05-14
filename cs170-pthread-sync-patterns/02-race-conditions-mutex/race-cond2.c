@@ -64,10 +64,10 @@ int main(int argc, char **argv)
   
   /* spawn threads */
   for (i = 0; i < num_thds; i++){
+    pas[i].s = s; /* pointer to the parent string */
     pas[i].id = i;
     pas[i].len = len;
     pas[i].iter = iter;
-    pas[i].s = s; /* pointer to the parent string */
     thread_create_perror(&pids[i], print_thread, &pas[i]);
   }
 
