@@ -1,9 +1,9 @@
 CC = gcc
 UTILS_MEM_DIR  = ../../utilities/utilities-mem/
 UTILS_PTHD_DIR = ../../utilities/utilities-pthread/
-CFLAGS = -I$(UTILS_MEM_DIR)         \
-         -I$(UTILS_PTHD_DIR)        \
-         -pthread -Wall -Wextra -O2
+CFLAGS = -I$(UTILS_MEM_DIR)                               \
+         -I$(UTILS_PTHD_DIR)                              \
+         -std=gnu90 -pthread -Wpedantic -Wall -Wextra -O2
 
 OBJ = avg.o                                \
       $(UTILS_MEM_DIR)utilities-mem.o      \
