@@ -1,7 +1,7 @@
 /**
    race-condition-2.c
 
-   usage        : ./race-cond2 num_thds len iter
+   usage        : ./race-cond2 num_threads len iter
    usage example: ./race-cond2 4 100 5
 
    The example is adopted from
@@ -18,7 +18,7 @@
 #include "utilities-pthread.h"
 
 const int C_PREEMPTION_PROB_ITER = 800000;
-const char *C_USAGE = "usage: ./race-cond2 num_thds len iter";
+const char *C_USAGE = "usage: ./race-cond2 num_threads len iter";
 
 typedef struct{
   char *s;
@@ -45,7 +45,7 @@ void *print_thread(void *arg){
 int main(int argc, char **argv)
 {
   char *s = NULL;
-  int i, num_thds;
+  int i, num_threads;
   int len, iter;
   pthread_t *pids = NULL;
   print_arg_t *pas = NULL;
@@ -55,15 +55,15 @@ int main(int argc, char **argv)
   }
 
   /* initialize */
-  num_thds = atoi(argv[1]);
+  num_threads = atoi(argv[1]);
   len = atoi(argv[2]);
   iter = atoi(argv[3]);
   s = malloc_perror(add_sz_perror(len, 1), sizeof(char));
-  pids = malloc_perror(num_thds, sizeof(pthread_t));
-  pas = malloc_perror(num_thds, sizeof(print_arg_t));
+  pids = malloc_perror(num_threads, sizeof(pthread_t));
+  pas = malloc_perror(num_threads, sizeof(print_arg_t));
   
   /* spawn threads */
-  for (i = 0; i < num_thds; i++){
+  for (i = 0; i < num_threads; i++){
     pas[i].s = s; /* pointer to the parent string */
     pas[i].id = i;
     pas[i].len = len;
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
   }
 
   /* join with main */
-  for (i = 0; i < num_thds; i++){
+  for (i = 0; i < num_threads; i++){
     thread_join_perror(pids[i], NULL);
   }
   free(s);
