@@ -20,6 +20,8 @@
    https://man7.org/linux/man-pages/man3/pthread_create.3.html
 */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>

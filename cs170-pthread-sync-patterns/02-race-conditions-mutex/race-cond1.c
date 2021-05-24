@@ -10,6 +10,8 @@
    consistent naming and error checking conventions.
 */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
