@@ -5,19 +5,26 @@ CFLAGS = -I$(UTILS_MEM_DIR)                            \
          -I$(UTILS_PTHD_DIR)                           \
          -std=gnu90 -pthread -Wpedantic -Wall -Wextra
 
-EXE = bound-buf-mutex
+EXE = bound-buf-mutex    \
+      bound-buf-condvar1
 
 SHARED_OBJ = ctimer.o                              \
              $(UTILS_MEM_DIR)utilities-mem.o       \
              $(UTILS_PTHD_DIR)utilities-pthread.o
 
-NSHARED_OBJ = bound-buf-mutex.o
+NSHARED_OBJ = bound-buf-mutex.o    \
+              bound-buf-condvar1.o
 
 all                   : $(EXE)
 bound-buf-mutex : bound-buf-mutex.o $(SHARED_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
+bound-buf-condvar1 : bound-buf-condvar1.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
 bound-buf-mutex.o                    : ctimer.h                             \
+                                       $(UTILS_MEM_DIR)utilities-mem.h      \
+                                       $(UTILS_PTHD_DIR)utilities-pthread.h
+bound-buf-condvar1.o                 : ctimer.h                             \
                                        $(UTILS_MEM_DIR)utilities-mem.h      \
                                        $(UTILS_PTHD_DIR)utilities-pthread.h
 ctimer.o                             : ctimer.h
