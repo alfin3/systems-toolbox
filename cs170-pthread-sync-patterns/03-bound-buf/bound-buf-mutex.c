@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <pthread.h>
 #include "ctimer.h"
 #include "utilities-mem.h"
@@ -75,7 +76,7 @@ typedef struct{
   int head;
   int tail;
   order_t **orders;
-  pthread_mutex_t lock; /* accessed by producers and consumers */
+  pthread_mutex_t lock;
 } order_q_t;
 
 void order_q_init(order_q_t *q, int count){
@@ -102,7 +103,7 @@ void order_q_free(order_q_t *q){
 typedef struct market{
   int num_stocks;
   int *quantities;
-  pthread_mutex_t lock; /* accessed by consumers */
+  pthread_mutex_t lock;
 } market_t;
 
 void market_init(market_t *m, int num_stocks, int quantity){
@@ -138,15 +139,15 @@ typedef struct{
   int num_stocks;
   int quantity;
   boolean_t verbose;
-  order_q_t *q;
+  order_q_t *q; /* clients (producers) and traders (consumers) */
 } client_arg_t;
 
 typedef struct{
   int id;
   boolean_t *done;
   boolean_t verbose;
-  order_q_t *q;
-  market_t *m;
+  order_q_t *q; /* clients (producers) and traders (consumers) */
+  market_t *m; /* only traders (consumers) */
 } trader_arg_t;
 
 /**
@@ -157,11 +158,11 @@ void *client_thread(void *arg){
   int i;
   int next;
   boolean_t queued;
-  client_arg_t *ca = arg;
   order_t *order = NULL;
+  client_arg_t *ca = arg;
+  order = malloc_perror(1, sizeof(order_t));
   for (i = 0; i < ca->order_count; i++){
     /* produce an order */
-    order = malloc_perror(1, sizeof(order_t));
     order->stock_id = DRAND() * (ca->num_stocks - 1);
     order->quantity = DRAND() * ca->quantity;
     order->action = (DRAND() > C_PROB_HALF) ? BUY : SELL;
@@ -187,13 +188,13 @@ void *client_thread(void *arg){
 	ca->q->tail = next;
 	mutex_unlock_perror(&ca->q->lock);
 	queued = TRUE;
-	/* wait; atomic read in x86 */
+	/* wait until fulfilled; atomic read in x86 */
 	while (!order->fulfilled);
       }
     }
-    free(order);
-    order = NULL;
   }
+  free(order);
+  order = NULL;
   return NULL;
 }
 
@@ -203,21 +204,20 @@ void *client_thread(void *arg){
 void *trader_thread(void *arg){
   int next;
   boolean_t dequeued;
-  trader_arg_t *ta = arg;
   order_t *order = NULL;
+  trader_arg_t *ta = arg;
   while (TRUE){
+    /* dequeue or exit if done */
     dequeued = FALSE;
     while (!dequeued){
       mutex_lock_perror(&ta->q->lock);
       if (ta->q->head == ta->q->tail){
 	/* empty queue; unlock mutex to let new orders in, if any */
 	mutex_unlock_perror(&ta->q->lock);
-	if (*ta->done){
-	  pthread_exit(NULL);
-	}
+	if (*ta->done) return NULL;
       }else{
 	next = (ta->q->head + 1) % ta->q->count;
-	order = ta->q->orders[next];
+	order = ta->q->orders[next]; /* allocated and deallocated by client */
 	ta->q->head = next;
 	mutex_unlock_perror(&ta->q->lock);
 	dequeued = TRUE;
@@ -243,7 +243,6 @@ void *trader_thread(void *arg){
     /* atomic memory write on x86; inform the reading client thread */
     order->fulfilled = TRUE;
   }
-  return NULL;
 }
 
 int main(int argc, char **argv){
@@ -269,18 +268,38 @@ int main(int argc, char **argv){
     switch (c){
     case 'c':
       num_client_threads = atoi(optarg);
+      if (num_client_threads < 1){
+	fprintf(stderr,"number of client threads must be > 0\n");
+	exit(EXIT_FAILURE);
+      }
       break;
     case 't':
       num_trader_threads = atoi(optarg);
+      if (num_trader_threads < 1){
+	fprintf(stderr,"number of trader threads must be > 0\n");
+	exit(EXIT_FAILURE);
+      }
       break;
     case 'o':
       orders_per_client = atoi(optarg);
+      if (orders_per_client < 0){
+	fprintf(stderr,"orders per client must be non-negative\n");
+	exit(EXIT_FAILURE);
+      }
       break;
     case 'q':
       queue_count = atoi(optarg);
+      if (queue_count < 1 || queue_count > INT_MAX - 1){
+	fprintf(stderr,"invalid queue count\n");
+	exit(EXIT_FAILURE);
+      }
       break;
     case 's':
       num_stocks = atoi(optarg);
+      if (num_stocks < 1){
+	fprintf(stderr,"number of stocks must be > 0\n");
+	exit(EXIT_FAILURE);
+      }
       break;
     case 'V':
       verbose = TRUE;
@@ -288,15 +307,15 @@ int main(int argc, char **argv){
     default:
       fprintf(stderr, "unrecognized command %c\n", (char)c);
       fprintf(stderr,"usage: %s\n", C_USAGE);
-      exit(1);
+      exit(EXIT_FAILURE);
     }
   }
-  cids = malloc_perror(num_client_threads, sizeof(pthread_t));
-  tids = malloc_perror(num_trader_threads, sizeof(pthread_t));
-  cas = malloc_perror(num_client_threads,  sizeof(client_arg_t));
-  tas = malloc_perror(num_trader_threads,  sizeof(trader_arg_t));
   q = malloc_perror(1, sizeof(order_q_t));
   m = malloc_perror(1, sizeof(market_t));
+  cids = malloc_perror(num_client_threads, sizeof(pthread_t));
+  tids = malloc_perror(num_trader_threads, sizeof(pthread_t));
+  cas = malloc_perror(num_client_threads, sizeof(client_arg_t));
+  tas = malloc_perror(num_trader_threads, sizeof(trader_arg_t));
   order_q_init(q, queue_count);
   market_init(m, num_stocks, quantity);
   start = ctimer();
