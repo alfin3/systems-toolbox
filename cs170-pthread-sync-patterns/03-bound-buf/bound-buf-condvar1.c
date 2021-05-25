@@ -81,8 +81,8 @@ typedef struct{
   int tail;
   order_t **orders;
   pthread_mutex_t lock;
-  pthread_cond_t cond_not_full;
-  pthread_cond_t cond_not_empty;
+  pthread_cond_t cond_nfull;
+  pthread_cond_t cond_nempty;
 } order_q_t;
 
 void order_q_init(order_q_t *q, int count){
@@ -90,8 +90,8 @@ void order_q_init(order_q_t *q, int count){
   q->count = count + 1; /* + 1 due to fifo queue implementation */
   q->orders = calloc_perror(q->count, sizeof(order_t *));
   mutex_init_perror(&q->lock);
-  cond_init_perror(&q->cond_not_full);
-  cond_init_perror(&q->cond_not_empty);
+  cond_init_perror(&q->cond_nfull);
+  cond_init_perror(&q->cond_nempty);
 }
 
 void order_q_free(order_q_t *q){
@@ -178,9 +178,9 @@ void *client_thread(void *arg){
     mutex_lock_perror(&ca->q->lock);
     next = (ca->q->tail + 1) % ca->q->count;
     while (next == ca->q->head){
-      /* queue is full; wait for cond_not_full signal and retest
+      /* queue is full; wait for cond_nfull signal and retest
          because "at least one" waiting thread is unblocked */
-      cond_wait_perror(&ca->q->cond_not_full, &ca->q->lock);
+      cond_wait_perror(&ca->q->cond_nfull, &ca->q->lock);
       next = (ca->q->tail + 1) % ca->q->count;
     }
     /* queue is not full; queue the order and unlock mutex */
@@ -193,7 +193,7 @@ void *client_thread(void *arg){
     }
     ca->q->orders[next] = order;
     ca->q->tail = next;
-    cond_signal_perror(&ca->q->cond_not_empty);
+    cond_signal_perror(&ca->q->cond_nempty);
     mutex_unlock_perror(&ca->q->lock);
     /* wait until fulfilled; atomic read in x86 */
     while (!order->fulfilled);
@@ -215,18 +215,18 @@ void *trader_thread(void *arg){
     mutex_lock_perror(&ta->q->lock);
     while (ta->q->head == ta->q->tail){
       if (*ta->done){
-	cond_signal_perror(&ta->q->cond_not_empty);
+	cond_signal_perror(&ta->q->cond_nempty);
 	mutex_unlock_perror(&ta->q->lock);
 	return NULL;
       }
       /* after the last order is processed, all trader threads may be 
-         blocked; need to signal cont_not_empty after done is set to TRUE */
-      cond_wait_perror(&ta->q->cond_not_empty, &ta->q->lock);
+         blocked; need to signal cont_nempty after done is set to TRUE */
+      cond_wait_perror(&ta->q->cond_nempty, &ta->q->lock);
     }
     next = (ta->q->head + 1) % ta->q->count;
     order = ta->q->orders[next];
     ta->q->head = next;
-    cond_signal_perror(&ta->q->cond_not_full);
+    cond_signal_perror(&ta->q->cond_nfull);
     mutex_unlock_perror(&ta->q->lock);
     /* process a dequeued order */
     mutex_lock_perror(&ta->m->lock);
@@ -346,10 +346,10 @@ int main(int argc, char **argv){
   for (i = 0; i < num_client_threads; i++){
     thread_join_perror(cids[i], NULL);
   }
-  /* signal cond_not_empty because all trader threads may be blocked */
+  /* signal cond_nempty because all trader threads may be blocked */
   mutex_lock_perror(&q->lock);
   done = TRUE; /* atomic memory write on x86 */
-  cond_signal_perror(&q->cond_not_empty);
+  cond_signal_perror(&q->cond_nempty);
   mutex_unlock_perror(&q->lock);
   for (i = 0; i < num_trader_threads; i++){
     thread_join_perror(tids[i], NULL);
