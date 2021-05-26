@@ -7,7 +7,8 @@ CFLAGS = -I$(UTILS_MEM_DIR)                            \
 
 EXE = bound-buf-mutex    \
       bound-buf-condvar1 \
-      bound-buf-condvar2
+      bound-buf-condvar2 \
+      bound-buf-sema
 
 SHARED_OBJ = ctimer.o                              \
              $(UTILS_MEM_DIR)utilities-mem.o       \
@@ -15,7 +16,8 @@ SHARED_OBJ = ctimer.o                              \
 
 NSHARED_OBJ = bound-buf-mutex.o    \
               bound-buf-condvar1.o \
-              bound-buf-condvar2.o
+              bound-buf-condvar2.o \
+              bound-buf-sema.o
 
 all                   : $(EXE)
 bound-buf-mutex : bound-buf-mutex.o $(SHARED_OBJ)
@@ -23,6 +25,8 @@ bound-buf-mutex : bound-buf-mutex.o $(SHARED_OBJ)
 bound-buf-condvar1 : bound-buf-condvar1.o $(SHARED_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 bound-buf-condvar2 : bound-buf-condvar2.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+bound-buf-sema : bound-buf-sema.o $(SHARED_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 bound-buf-mutex.o                    : ctimer.h                             \
@@ -32,6 +36,9 @@ bound-buf-condvar1.o                 : ctimer.h                             \
                                        $(UTILS_MEM_DIR)utilities-mem.h      \
                                        $(UTILS_PTHD_DIR)utilities-pthread.h
 bound-buf-condvar2.o                 : ctimer.h                             \
+                                       $(UTILS_MEM_DIR)utilities-mem.h      \
+                                       $(UTILS_PTHD_DIR)utilities-pthread.h
+bound-buf-sema.o                     : ctimer.h                             \
                                        $(UTILS_MEM_DIR)utilities-mem.h      \
                                        $(UTILS_PTHD_DIR)utilities-pthread.h
 ctimer.o                             : ctimer.h
