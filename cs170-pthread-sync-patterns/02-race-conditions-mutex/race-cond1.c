@@ -1,5 +1,5 @@
 /**
-   race-condition-1.c
+   race-cond1.c
 
    usage        : ./race-cond1 num_threads len iter
    usage example: ./race-cond1 4 100 5

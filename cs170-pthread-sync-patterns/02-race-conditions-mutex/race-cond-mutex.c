@@ -1,5 +1,5 @@
 /**
-   race-condition-mutex.c
+   race-cond-mutex.c
 
    usage        : ./race-cond-mutex num_threads len iter
    usage example: ./race-cond-mutex 4 100 5
