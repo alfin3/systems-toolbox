@@ -348,7 +348,7 @@ int main(int argc, char **argv){
   }
   /* signal cond_nempty because all trader threads may be blocked */
   mutex_lock_perror(&q->lock);
-  done = TRUE; /* atomic memory write on x86 */
+  done = TRUE;
   cond_signal_perror(&q->cond_nempty);
   mutex_unlock_perror(&q->lock);
   for (i = 0; i < num_trader_threads; i++){
