@@ -30,7 +30,7 @@
 
 typedef struct{
   int num_phil_threads;
-  pthread_mutex_t *locks[NUM_THREADS_MAX];
+  pthread_mutex_t *locks;
 } forks_t;
 
 /**
@@ -42,9 +42,9 @@ void *state_new(int num_phil_threads){
   forks_t *fs = NULL;
   fs = malloc_perror(1, sizeof(forks_t));
   fs->num_phil_threads = num_phil_threads;
+  fs->locks =  malloc_perror(num_phil_threads, sizeof(pthread_mutex_t));
   for (i = 0; i < fs->num_phil_threads; i++){
-    fs->locks[i] =  malloc_perror(1, sizeof(pthread_mutex_t));
-    mutex_init_perror(fs->locks[i]);
+    mutex_init_perror(&fs->locks[i]);
   }
   return fs;
 }
@@ -60,8 +60,8 @@ void *state_new(int num_phil_threads){
 void state_pickup(void *state, int id){
   forks_t *fs = state;
   /* lock the left fork and then the right fork */
-  mutex_lock_perror(fs->locks[id]);
-  mutex_lock_perror(fs->locks[(id + 1) % fs->num_phil_threads]);
+  mutex_lock_perror(&fs->locks[id]);
+  mutex_lock_perror(&fs->locks[(id + 1) % fs->num_phil_threads]);
 }
 
 /**
@@ -70,6 +70,6 @@ void state_pickup(void *state, int id){
 void state_putdown(void *state, int id){
   forks_t *fs = state;
   /* unlock the right fork and then the left fork */
-  mutex_unlock_perror(fs->locks[(id + 1) % fs->num_phil_threads]);
-  mutex_unlock_perror(fs->locks[id]);
+  mutex_unlock_perror(&fs->locks[(id + 1) % fs->num_phil_threads]);
+  mutex_unlock_perror(&fs->locks[id]);
 }

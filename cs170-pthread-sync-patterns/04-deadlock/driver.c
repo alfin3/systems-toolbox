@@ -30,9 +30,11 @@
 
 #define RANDOM_SEED() do{srandom(time(NULL));}while (0)
 #define RANDOM() (random()) /* basic Linux random number generator */
+#define BUF_SIZE_MAX (500) /* used as int */
 
 typedef enum{FALSE, TRUE} boolean_t;
 
+const int C_PRINT_INTERVAL = 10;
 const char *C_USAGE = "./executable num_phil_threads max_dur";
 
 typedef struct{
@@ -50,7 +52,7 @@ void *phil_thread(void *arg){
   phil_arg_t *pa = arg;
   while (TRUE){
     /* think */
-    t = RANDOM() % (pa->max_dur + 1);
+    t = RANDOM() % pa->max_dur + 1; /* at least 1 */
     printf("%3ld Philosopher %d thinking for %ld seconds\n", 
                 time(NULL) - pa->start_time, pa->id, t);
     fflush(stdout);
@@ -61,11 +63,12 @@ void *phil_thread(void *arg){
     fflush(stdout);
     t = time(NULL);
     state_pickup(pa->state, pa->id);
+    t = time(NULL) - t;
     mutex_lock_perror(pa->lock_block_times);
-    pa->block_times[pa->id] += time(NULL) - t;
+    pa->block_times[pa->id] += t;
     mutex_unlock_perror(pa->lock_block_times);
     /* eat */
-    t = RANDOM() % (pa->max_dur + 1);
+    t = RANDOM() % pa->max_dur + 1; /* at least 1 */
     printf("%3ld Philosopher %d eating for %ld seconds\n", 
                 time(NULL) - pa->start_time, pa->id, t);
     fflush(stdout);
@@ -82,14 +85,13 @@ int main(int argc, char **argv){
   char s[BUF_SIZE_MAX];
   char *cur = NULL;
   int i, num_phil_threads;
-  int print_interval = 10;
   long max_dur;
   long start_time = time(NULL);
   long *block_times = NULL;
   long total_block_time = 0;
   void *state = NULL;
-  pthread_t pids[NUM_THREADS_MAX];
-  phil_arg_t pas[NUM_THREADS_MAX];
+  pthread_t *pids = NULL;
+  phil_arg_t *pas = NULL;
   pthread_mutex_t lock_block_times;
   RANDOM_SEED();
   if (argc != 3) {
@@ -99,7 +101,7 @@ int main(int argc, char **argv){
   num_phil_threads = atoi(argv[1]);
   max_dur = atoi(argv[2]);
   if (num_phil_threads > NUM_THREADS_MAX || num_phil_threads < 1){
-    fprintf(stderr, "number of threads must be positive and > %d\n",
+    fprintf(stderr, "number of threads must be positive and <= %d\n",
 	    NUM_THREADS_MAX);
     exit(EXIT_FAILURE);
   }
@@ -109,6 +111,8 @@ int main(int argc, char **argv){
     exit(EXIT_FAILURE);
   }
   block_times = calloc_perror(num_phil_threads, sizeof(long));
+  pids = malloc_perror(num_phil_threads, sizeof(pthread_t));
+  pas = malloc_perror(num_phil_threads, sizeof(phil_arg_t));
   state = state_new(num_phil_threads);
   mutex_init_perror(&lock_block_times);
   for (i = 0; i < num_phil_threads; i++){
@@ -137,7 +141,7 @@ int main(int argc, char **argv){
     mutex_unlock_perror(&lock_block_times);
     printf("%s\n", s);
     fflush(stdout);
-    sleep(print_interval);
+    sleep(C_PRINT_INTERVAL);
   }
   /* no dellocation performed due to Ctrl+C */
 }
