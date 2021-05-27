@@ -5,19 +5,25 @@ CFLAGS = -I$(UTILS_MEM_DIR)                               \
          -I$(UTILS_PTHD_DIR)                              \
          -std=gnu90 -pthread -Wpedantic -Wall -Wextra -O1
 
-EXE = deadlock1
+EXE = deadlock1 deadlock2
 
 SHARED_OBJ = driver.o                              \
              $(UTILS_MEM_DIR)utilities-mem.o       \
              $(UTILS_PTHD_DIR)utilities-pthread.o
 
-NSHARED_OBJ = deadlock1.o
+NSHARED_OBJ = deadlock1.o \
+              deadlock2.o
 
 all       : $(EXE)
 deadlock1 : deadlock1.o $(SHARED_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
+deadlock2 : deadlock2.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
 deadlock1.o                          : deadlock.h                            \
+                                       $(UTILS_MEM_DIR)utilities-mem.h       \
+                                       $(UTILS_PTHD_DIR)utilities-pthread.h
+deadlock2.o                          : deadlock.h                            \
                                        $(UTILS_MEM_DIR)utilities-mem.h       \
                                        $(UTILS_PTHD_DIR)utilities-pthread.h
 driver.o                             : deadlock.h                            \

@@ -1,9 +1,10 @@
 /**
-   deadlock1.c
+   deadlock2.c
 
    A solution of the "Dining Philosophers" problem. The implementation
-   is prone to deadlock, which may not be reached due to the granularity of
-   timeslicing.
+   is prone to deadlock, which is likely to be reached due to an increased
+   probability of preemption resulting from a call to sleep after acquiring
+   the first mutex and before acquiring the second mutex in state_pickup.
    
    The functions for creating a thread synchronization state and pickup and
    putdown operations are called from the driver implemented in
@@ -28,6 +29,8 @@
 #include "deadlock.h"
 #include "utilities-mem.h"
 #include "utilities-pthread.h"
+
+const long C_INTERLOCK_TIME = 3;
 
 typedef struct{
   int num_phil_threads;
@@ -62,6 +65,7 @@ void state_pickup(void *state, int id){
   forks_t *fs = state;
   /* lock the left fork and then the right fork */
   mutex_lock_perror(&fs->locks[id]);
+  sleep(C_INTERLOCK_TIME);
   mutex_lock_perror(&fs->locks[(id + 1) % fs->num_phil_threads]);
 }
 
