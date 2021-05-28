@@ -39,6 +39,7 @@ void state_pickup(void *state, int id);
 */
 void state_putdown(void *state, int id);
 
+#define NUM_THREADS_MIN (2) /* used as int */
 #define NUM_THREADS_MAX (25) /* used as int */
 
 #endif

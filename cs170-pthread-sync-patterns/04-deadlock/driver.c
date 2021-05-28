@@ -100,9 +100,10 @@ int main(int argc, char **argv){
   }
   num_phil_threads = atoi(argv[1]);
   max_dur = atoi(argv[2]);
-  if (num_phil_threads > NUM_THREADS_MAX || num_phil_threads < 1){
-    fprintf(stderr, "number of threads must be positive and <= %d\n",
-	    NUM_THREADS_MAX);
+  if (num_phil_threads < NUM_THREADS_MIN ||
+      num_phil_threads > NUM_THREADS_MAX){
+    fprintf(stderr, "number of threads must be >= %d and <= %d\n",
+	    NUM_THREADS_MIN, NUM_THREADS_MAX);
     exit(EXIT_FAILURE);
   }
   if (max_dur < 0){
