@@ -16,15 +16,19 @@
            the adjacent threads are odd. If A waits for the second mutex,
            then an adjacent thread has acquired this mutex as its second
            mutex and will release it. Thus, A will acquire its second 
-           mutex.
+           mutex, unless the other thread reacquires it. No deadlock.
    case 2: A is even and an adjacent thread B is even.
            a) The first mutex of A is the second mutex of B. The second
               mutex of A is the second mutex of another thread. Thus, A
-              will acquire its second mutex.
+              will acquire its second mutex, unless the other thread
+              reacquires it. No deadlock.
            b) The second mutex of A is the first mutex of B. If A waits
               for its second mutex, then B acquired it. The second mutex
               of B is the second mutex of another thread. Thus, B will
-              release its first mutex. A will acquire its second mutex.
+              release its first mutex, unless the other thread requires
+              B's second mutex. If B releases its first mutex, A will 
+              acquire its second mutex, unless B requires it.
+              No deadlock.
 
    Fairness:
 
