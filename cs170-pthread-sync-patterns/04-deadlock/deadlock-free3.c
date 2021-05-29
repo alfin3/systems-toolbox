@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <pthread.h>
 #include "deadlock.h"
 #include "utilities-mem.h"
@@ -69,8 +70,12 @@ typedef struct{
 */
 void queue_init(queue_t *q, int count){
   memset(q, 0, sizeof(queue_t)); /* head = 0 and tail = 0 */
+  if (count == INT_MAX){
+    fprintf(stderr, "count overflow in queue_init\n");
+    exit(EXIT_FAILURE);
+  }
   q->count = count + 1; /* + 1 due to fifo queue implementation */
-  q->ids = malloc_perror(add_sz_perror(count, 1), sizeof(int));
+  q->ids = malloc_perror(q->count, sizeof(int));
 }
 
 

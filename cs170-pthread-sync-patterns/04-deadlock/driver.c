@@ -106,9 +106,8 @@ int main(int argc, char **argv){
 	    NUM_THREADS_MIN, NUM_THREADS_MAX);
     exit(EXIT_FAILURE);
   }
-  if (max_dur < 0){
-    fprintf(stderr, "maximal eating/thinking duration must be "
-	    "nonnegative\n");
+  if (max_dur <= 0){
+    fprintf(stderr, "maximal eating/thinking duration must be positive\n");
     exit(EXIT_FAILURE);
   }
   block_times = calloc_perror(num_phil_threads, sizeof(long));
