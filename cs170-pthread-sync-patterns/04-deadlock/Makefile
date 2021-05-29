@@ -5,7 +5,7 @@ CFLAGS = -I$(UTILS_MEM_DIR)                               \
          -I$(UTILS_PTHD_DIR)                              \
          -std=gnu90 -pthread -Wpedantic -Wall -Wextra -O1
 
-EXE = deadlock1 deadlock2 deadlock-free1 deadlock-free2
+EXE = deadlock1 deadlock2 deadlock-free1 deadlock-free2 deadlock-free3
 
 SHARED_OBJ = driver.o                              \
              $(UTILS_MEM_DIR)utilities-mem.o       \
@@ -14,7 +14,8 @@ SHARED_OBJ = driver.o                              \
 NSHARED_OBJ = deadlock1.o      \
               deadlock2.o      \
               deadlock-free1.o \
-              deadlock-free2.o
+              deadlock-free2.o \
+              deadlock-free3.o
 
 all       : $(EXE)
 deadlock1 : deadlock1.o $(SHARED_OBJ)
@@ -24,6 +25,8 @@ deadlock2 : deadlock2.o $(SHARED_OBJ)
 deadlock-free1 : deadlock-free1.o $(SHARED_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 deadlock-free2 : deadlock-free2.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+deadlock-free3 : deadlock-free3.o $(SHARED_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 deadlock1.o                          : deadlock.h                            \
@@ -36,6 +39,9 @@ deadlock-free1.o                     : deadlock.h                            \
                                        $(UTILS_MEM_DIR)utilities-mem.h       \
                                        $(UTILS_PTHD_DIR)utilities-pthread.h
 deadlock-free2.o                     : deadlock.h                            \
+                                       $(UTILS_MEM_DIR)utilities-mem.h       \
+                                       $(UTILS_PTHD_DIR)utilities-pthread.h
+deadlock-free3.o                     : deadlock.h                            \
                                        $(UTILS_MEM_DIR)utilities-mem.h       \
                                        $(UTILS_PTHD_DIR)utilities-pthread.h
 driver.o                             : deadlock.h                            \
