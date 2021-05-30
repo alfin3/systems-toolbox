@@ -26,7 +26,9 @@
       sections for queuing and dequeuing to reduce their size, resulting in a 
       speed up, for the following reason: once a (de)queue op is reserved,
       it is allowed under mutex lock, and mutex lock can be released before
-      the ops availability is updated.
+      the ops availability is updated. The change is valid because mutex and
+      condition semaphores have each a separate mutex and condition variable
+      in their semaphore implementation (separate monitors).
 */
 
 #define _XOPEN_SOURCE 600
